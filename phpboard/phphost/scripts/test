@@ -1,0 +1,113 @@
+<?php
+
+$xycmdfile=$GLOBALS['app']['xycmdfile'];
+$xyworkfile=$GLOBALS['app']['xyworkfile'];
+$cison=false;
+$workid=-1;
+
+modules("slip");
+modules("switchs");
+
+$x=new slip('x');
+$y=new slip('y');
+$c=new switchs('swc');
+
+
+
+for($a=0;$a<10;$a++){
+	$ck=checkcmd();
+	if ($ck<>1){
+		usleep(50000);
+	}else{
+
+		file_set_contents($xycmdfile,'0');
+		startwork(xyworkfile);
+
+
+	};
+
+
+
+
+}
+
+function cclose(){
+	global $cison;
+	$cison=false;
+	
+	
+}
+function copen(){
+	global $cison;
+	$cison=true;
+	
+	
+	
+}
+
+function moveto($x,$y,$speed){
+	global $cmd;
+	
+}
+function checkcmd(){
+	global $xycmdfile;
+	$r=0;
+	if (file_exists($xycmdfile)){
+		$r=file_get_contents($xycmdfile);
+		
+	}
+	return $r; 
+
+}
+function endwork(){
+	global $x,$y,$c;
+	$c->OFF();
+	$x->gozero();
+	$y->gozero();
+}
+function startwork($file){
+
+	global $cison,$workid,$xycmdfile;
+	$mapsize=$GLOBALS['app']['mapsize'];
+	$speed_working=$GLOBALS['app']['speed_working'];
+	$speed_move=$GLOBALS['app']['speed_move'];
+	
+	$workid=file_get_contents($xycmdfile);
+	$l=explode("\n",file_get_contents($file));
+
+
+	$mvcount=0;
+	
+
+	for($i=0;$i<$mapsize;$i++){
+		$jl=($i%2==0)?$l[$i]:strrev($l[$i]);
+	
+		for($j=0;$j<$mapsize;$j++){
+			$s=$jl{$j};
+		
+			if ($s=='0'){
+				if ($cison) cclose();
+			}else{
+			
+				if ($cison){
+					moveto($j,$i,$speed_working);
+				}else{
+					moveto($j,$i,$speed_move);
+					copen();
+				}
+				$mvcount++;
+			}
+			
+			if ($i%5==0) {
+				if (checkcmd()<>0) break 2;
+			}
+
+		}
+		
+		if (checkcmd()<>0) break;
+
+	}
+	endwork();
+
+}
+?>

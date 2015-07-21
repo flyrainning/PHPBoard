@@ -1,0 +1,38 @@
+<?php
+
+class status extends SQLite3{
+	public $dbfile;
+	function __construct($index='0'){
+		$this->dbfile=STATUS_DB.$index.'.status';
+		if (file_exists($this->dbfile)){
+			$this->open($this->dbfile);
+		}else{
+			$this->open($this->dbfile);
+			$makesql=<<<CODE
+CREATE TABLE `data` (
+	`k`	TEXT,
+	`v`	TEXT,
+	PRIMARY KEY(k)
+);
+CODE;
+			$this->exec($makesql);
+		}
+	}
+	
+	
+	public function get($k,$v=''){
+
+		$r= $this->Querysingle('SELECT v FROM data where k="'.$k.'";');
+		return (empty($r))?$v:$r;
+	
+	}
+	public function set($k,$v=''){
+		$v=$this->escapeString($v);
+		$this->exec("replace into data (k,v) VALUES ('$k','$v');");
+	
+	}
+
+	
+}
+
+?>

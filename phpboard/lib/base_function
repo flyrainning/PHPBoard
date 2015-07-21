@@ -1,0 +1,53 @@
+<?php
+
+function trim_array($scr,$arr=array(' ')){
+	$arr=strtoarray($arr);
+	if (is_array($scr)){
+		foreach($scr as $k=>$v){
+			$scr[$k]=trim_array($v,$arr);
+		}
+	}else{
+		while ((in_array(substr($scr,0,1),$arr)) || (in_array(substr($scr,-1),$arr))){
+			foreach($arr as $a){
+				if ((empty($a))||($a==' ')){
+					$scr=trim($scr);
+				}else{
+					$scr=trim($scr,$a);
+				}
+			}	
+		}
+	}	
+	return $scr;
+}
+
+function arraytostr($arr,$parm=','){
+	$arr=is_array($arr)?implode($parm, $arr):$arr;
+	return trim($arr,$parm);
+
+}
+function strtoarray($str,$parm=','){
+	if (is_string($str) && trim($str)==''){
+		$str=array();
+	}else{
+		$str=is_array($str)?$str:explode($parm,trim($str,$parm));
+	}
+	return $str;
+
+}
+
+function utf8($s){
+	return iconv("gbk", "UTF-8", $s);
+}
+function gbk($s){
+	return iconv("UTF-8","gbk" ,$s);
+}
+function jsontoarr($json){
+	return json_decode($json,true);
+}
+function arrtojson($arr){
+	return json_encode($arr);
+}
+
+
+
+?>

@@ -1,0 +1,12 @@
+<?php
+define('PHPBOARD',TRUE);
+define('ROOT',dirname(__FILE__).'/');
+
+$GLOBALS['config']=array();
+foreach(glob(ROOT.'config/*.conf') as $f) $GLOBALS['config'][rtrim(basename($f),'.conf')]=json_decode(file_get_contents($f),true);
+
+if (isset($GLOBALS['config']['global'])) foreach($GLOBALS['config']['global'] as $k=>$v) define($k,$v);
+
+foreach(glob(ROOT.'lib/*') as $f) require $f;
+
+?>

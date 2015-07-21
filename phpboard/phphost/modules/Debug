@@ -1,0 +1,48 @@
+<?php
+class debug{
+	public static function dump($v,$title=''){
+		echo "\n++++  dump var $title:\n";
+		print_r($v);
+		echo "\n++++  end\n\n";
+	}
+	public static function allvar(){
+		echo "\n++++  dump all var:\n";
+		print_r(get_defined_vars());
+		echo "\n++++  end\n\n";
+	}
+	public static function d($v,$title=''){
+		self::dump($v,$title);
+	}
+
+	public static function time_start($name){
+		isset($GLOBALS['debug']) or $GLOBALS['debug']=array();
+		$GLOBALS['debug']['time_'.$name]=microtime();
+	}
+	public static function time_end($name){
+		$starttime = explode(" ",$GLOBALS['debug']['time_'.$name]); 
+		$endtime = explode(" ",microtime()); 
+		return round(($endtime[0]-$starttime[0]+$endtime[1]-$starttime[1])*1000,8);
+	}
+	public static function out(){
+	
+		if (isset($GLOBALS['config']['debug'])&&($GLOBALS['config']['debug'])){
+	
+				
+			echo "\nDebug:";
+			echo "\n______________________________________________________________ snap: ".time()."\n";
+
+			echo "var:\n";
+		
+			print_r(get_defined_vars());
+			echo "\n______________________________________________________________\n";
+			$GLOBALS['debug']['peak_memory_usage']=memory_get_peak_usage();
+			echo "\n ◇  内存峰值: ".round($GLOBALS['debug']['peak_memory_usage']/1024/1024,4).' Mb ( '.$GLOBALS['debug']['peak_memory_usage']." Bytes )\n";
+			echo ' ◇  运行时间: '.self::time_end('main')." 毫秒"; 
+		
+			echo "\n______________________________________________________________\n";
+			echo "Error Msg:\n";
+		}
+	}
+}
+
+?>

@@ -1,0 +1,52 @@
+<?php
+modules('GPIO');
+class switchs{
+	public $id;
+	public $gpio;
+	public $pin;
+	public $direction;
+	public $value_of_on;
+	public $value_of_off;
+	public $isready;
+
+	function __construct($switchs) {
+	
+		foreach($GLOBALS['device'][__CLASS__] as $v){
+			if ($switchs==$v['id']){
+				$this->id=$v['id'];
+				$this->pin=$v['pin'];
+				$this->direction=$v['direction'];
+				$this->value_of_on=$v['value_of_on'];
+				$this->value_of_off=$v['value_of_off'];
+
+				$this->isready=true;
+				break;
+
+			}
+		}
+		($this->isready) or error(__CLASS__.' init error (no conf found):'.$switchs);
+		$this->gpio=new GPIO($this->pin);
+		$this->gpio->setdir($this->direction);
+
+
+	}
+	public function isON(){
+		return ($this->gpio->get()==$this->value_of_on)?true:false;
+	}
+	public function isOFF(){
+		return ($this->gpio->get()==$this->value_of_off)?true:false;
+	}
+	public function ON(){
+		return $this->gpio->set($this->value_of_on);
+	}
+	public function OFF(){
+		return $this->gpio->set($this->value_of_off);
+	}
+	public function change(){
+		return ($this->isON())?$this->OFF():$this->ON();
+	}
+
+
+
+}
+?>

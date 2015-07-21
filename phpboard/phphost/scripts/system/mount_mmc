@@ -1,0 +1,7 @@
+<?php
+
+@exec("mount /dev/mmcblk0p1 /mnt", $r);
+		
+
+
+?>

@@ -1,0 +1,35 @@
+<?php
+
+while(!file_get_contents("http://www.baidu.com")){
+	sleep(5);
+
+}
+
+$iface=array(
+	'eth0',
+	'wlan0',
+	'wlan1',
+);
+$hasip=array();
+
+foreach($iface as $if){
+	$r='';
+	@exec("ifconfig $if", $r);
+	$r=arraytostr($r);
+
+	if (strpos($r,'addr:')>0){
+		$hasip[]=$if;
+	}
+}
+
+if (!empty($hasip)){
+	foreach($iface as $if){
+		if (!in_array($if,$hasip)){
+			@exec("ifconfig $if down", $r);
+			echo "$if down \n";
+		}
+	}
+} 
+
+
+?>

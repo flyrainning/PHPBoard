@@ -1,0 +1,102 @@
+<?php
+modules('GPIO');
+class PCA9685{
+
+	const PCA9685_SUBADR1=0x2;
+	const PCA9685_SUBADR2=0x3;
+	const PCA9685_SUBADR3=0x4;
+
+	const PCA9685_MODE1=0x0;
+	const PCA9685_PRESCALE=0xFE;
+
+	const LED0_ON_L=0x6;
+	const LED0_ON_H=0x7;
+	const LED0_OFF_L=0x8;
+	const LED0_OFF_H=0x9;
+
+	const ALLLED_ON_L=0xFA;
+	const ALLLED_ON_H=0xFB;
+	const ALLLED_OFF_L=0xFC;
+	const ALLLED_OFF_H=0xFD;
+	
+	public $id;
+	public $adapter;
+	public $addr;
+	public $isready;
+	public $i2c;
+	
+	function __construct($id) {
+	
+		foreach($GLOBALS['device'][__CLASS__] as $v){
+			if ($id==$v['id']){
+				$this->id=$v['id'];
+				$this->adapter=$v['adapter'];
+				$this->addr=$v['addr'];
+
+				$this->isready=true;
+				break;
+
+			}
+		}
+		($this->isready) or error(__CLASS__.' init error (no conf found):'.$id);
+		if(!extension_loaded('fp_i2c')) {
+			error('fp_i2c extension is not loaded');
+			$this->isready=false;
+		}
+		
+		$this->i2c=new i2c();
+
+
+	}
+	public function open(){
+		return $this->i2c->open($this->adapter,$this->addr);
+	}
+	public function begin(){
+		if ($this->open()){
+			$this->reset();
+		}
+		
+	}
+	public function reset(){
+		return $this->i2c->write(self::PCA9685_MODE1, 0x00);
+	}
+	public function setPWMFreq($freq){
+		$res=true;
+		$freq *= 0.9;  // Correct for overshoot in the frequency setting (see issue #11).
+		$prescaleval = 25000000;
+		$prescaleval /= 4096;
+		$prescaleval /= $freq;
+		$prescaleval -= 1;
+		
+		$prescale = floor($prescaleval + 0.5);
+		
+		$oldmode = $this->i2c->read(self::PCA9685_MODE1);
+		$newmode = ($oldmode & 0x7F) | 0x10; // sleep
+		$res&=$this->i2c->write(self::PCA9685_MODE1, $newmode); // go to sleep
+		$res&=$this->i2c->write(self::PCA9685_PRESCALE, $prescale); // set the prescaler
+		$res&=$this->i2c->write(self::PCA9685_MODE1, $oldmode);
+		usleep(5);
+		$res&=$this->i2c->write(self::PCA9685_MODE1, $oldmode | 0xa1);
+	
+	
+		return $res;
+	}
+	public function setPWM($num,$on,$off){
+		$res=true;
+		$nowaddr=self::LED0_ON_L+4*$num;
+
+		$res&=$this->i2c->write($nowaddr,$on);
+		$nowaddr+=1;
+		$res&=$this->i2c->write($nowaddr,$on>>8);
+		$nowaddr+=1;
+		$res&=$this->i2c->write($nowaddr,$off);
+		$nowaddr+=1;
+		$res&=$this->i2c->write($nowaddr,$off>>8);
+
+		return $res;
+	}
+
+
+
+}
+?>

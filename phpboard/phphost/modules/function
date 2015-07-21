@@ -1,0 +1,61 @@
+<?php
+
+
+function post($url,$data){
+
+	$options = array( 
+		'http'=>array( 
+		'method'=>"POST", 
+		'timeout' => 30,
+		
+		
+		'header'  => array(
+			"User-Agent: PHPBoard API Client (v 0.6)",
+			"Content-type: application/x-www-form-urlencoded",
+
+			),
+		'content' => http_build_query($data),
+		) 
+	); 
+
+	$context = stream_context_create($options); 
+	$cnt=0;
+	while($cnt < 3 && ($str=@file_get_contents($url, false, $context))===FALSE) $cnt++;
+
+	return $str;
+
+
+}
+function get($url){
+
+	$options = array( 
+		'http'=>array( 
+		'method'=>"GET", 
+		'timeout' => 30,
+		
+		
+		) 
+	); 
+
+	$context = stream_context_create($options); 
+	$cnt=0;
+	while($cnt < 3 && ($str=@file_get_contents($url, false, $context))===FALSE) $cnt++;
+
+	return $str;
+
+
+}
+
+
+function getp($str){
+	$arr=strtoarray($str);
+	if (!empty($arr)){
+		$jsonarr=(empty($GLOBALS['argv'][2]))?array():jsontoarr($GLOBALS['argv'][2]);
+		foreach($arr as $k){
+			global ${$k};
+			if (isset($jsonarr[$k])) ${$k}=$jsonarr[$k];
+		}
+	}
+}
+
+?>

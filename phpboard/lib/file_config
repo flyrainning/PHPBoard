@@ -1,0 +1,26 @@
+<?php
+
+function set_file_conf($name, $value='') {
+	$filename=DIR_CONFIG.$name.'.conf.php';
+	file_exists($filename) or touch($filename);
+	file_put_contents($filename, '<?php return '.var_export($value, TRUE).'; ?>');
+}
+
+function get_file_conf($name,$v=''){
+	$filename=DIR_CONFIG.$name.'.conf.php';
+	return file_exists($filename)? require($filename):$v;
+
+}
+function set_tmp_conf($name, $value='') {
+	$filename=DIR_TMP.$name.'.conf.php';
+	file_exists($filename) or touch($filename);
+	file_put_contents($filename, '<?php return '.var_export($value, TRUE).'; ?>');
+}
+
+function get_tmp_conf($name,$v=''){
+	$filename=DIR_TMP.$name.'.conf.php';
+	return file_exists($filename)? require($filename):$v;
+
+}
+
+?>

@@ -1,0 +1,113 @@
+<?php
+modules('GPIO');
+class lcd1602{
+	public $id;
+	public $rs;
+	public $en;
+	public $p1;
+	public $p2;
+	public $p3;
+	public $p4;
+	public $isready;
+	function __construct($id) {
+	
+		foreach($GLOBALS['device'][__CLASS__] as $v){
+	
+			if ($id==$v['id']){
+				$this->id=$v['id'];
+				$this->rs=new GPIO($v['pin_rs']);
+				$this->en=new GPIO($v['pin_en']);
+				$this->p1=new GPIO($v['pin_D4']);
+				$this->p2=new GPIO($v['pin_D5']);
+				$this->p3=new GPIO($v['pin_D6']);
+				$this->p4=new GPIO($v['pin_D7']);
+				$this->isready=true;
+				break;
+
+			}
+		}
+		($this->isready) or error(__CLASS__.' init error (no conf found):'.$id);
+		
+		$this->write_hex(0,0x02);           
+		$this->write_hex(0,0x28);           //显示方式设置
+		$this->write_hex(0,0x0c);           //设置开显示，不显示光标  0x0c
+		$this->write_hex(0,0x06);           //默认(0x06)写入新数据后光标右移 屏幕不移动
+		$this->write_hex(0,0x01); 
+//0x18	文字左移  0x1c 文字右移	
+		
+	}
+	public function write_hex($rs,$hex){
+		$this->rs->set($rs);
+		$v=sprintf("%08b", $hex);
+
+		$this->en->set(0);
+
+		$this->en->set(1);
+		$this->p1->set($v{3});
+		$this->p2->set($v{2});
+		$this->p3->set($v{1});
+		$this->p4->set($v{0});
+
+
+		$this->en->set(0);
+
+		usleep(400);
+		$this->en->set(1);
+		$this->p1->set($v{7});
+		$this->p2->set($v{6});
+		$this->p3->set($v{5});
+		$this->p4->set($v{4});
+		
+		$this->en->set(0);
+		usleep(400);
+	}
+	public function write_one($rs,$char){
+
+		$this->write_hex($rs,ord(strval($char)));
+
+		
+	}
+	public function set($str,$start=0){
+		$this->write_hex(0,0x80+$start);
+		$str=strval($str);
+		$len=strlen($str);
+		//$len=($len>16)?16:$len;
+//$this->write_hex(0,0x80);
+///$this->write_hex(0,0xc0);
+		for($i=0;$i<$len;$i++){
+			$this->write_one(1,$str{$i});
+		}
+	}
+	public function clear(){
+		$this->write_hex(0,0x01);
+	}
+	function setline($line,$str){
+		if ($line==1){
+			$this->write_hex(0,0x80);
+		}else if ($line==2){
+			$this->write_hex(0,0xc0);
+		}else{
+			return;
+		}
+		$str=strval($str);
+		$len=strlen($str);
+		$len=($len>16)?16:$len;
+
+		for($i=0;$i<$len;$i++){
+			$this->write_one(1,$str{$i});
+		}
+		for($i=$len;$i<40;$i++){
+			$this->write_one(1,' ');
+		}
+	}
+	public function l1($str=''){
+		$this->setline(1,$str);
+		
+	}
+	public function l2($str=''){
+		$this->setline(2,$str);
+		
+	}
+
+}
+?>

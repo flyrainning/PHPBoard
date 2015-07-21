@@ -1,0 +1,13 @@
+<?php
+
+modules("leds");
+$l=new leds('led1');
+
+if($argv[2]=='on'){
+	$l->ON();
+}else{
+	$l->OFF();
+}
+
+
+?>

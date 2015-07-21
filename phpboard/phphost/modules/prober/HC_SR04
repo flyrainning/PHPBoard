@@ -1,0 +1,66 @@
+<?php
+modules('GPIO');
+class hc_sr04{
+	public $id;
+
+	public $pin_trig;
+	public $pin_echo;
+	public $gpio_trig;
+	public $gpio_echo;
+	public $pausetime;
+	public $timeout;
+	public $isready;
+	function __construct($id) {
+	
+		foreach($GLOBALS['device'][__CLASS__] as $v){
+			if ($id==$v['id']){
+				$this->id=$v['id'];
+				$this->pin_trig=$v['pin_trig'];
+				$this->pin_echo=$v['pin_echo'];
+				$this->pausetime=intval($v['pausetime']);
+				$this->timeout=intval($v['timeout']);
+				$this->isready=true;
+				break;
+
+			}
+		}
+		($this->isready) or error(__CLASS__.' init error (no conf found):'.$id);
+		$this->gpio_trig=new GPIO($this->pin_trig);
+		$this->gpio_trig->setdir('out');
+		$this->gpio_trig->set($this->pin_trig,0);
+		$this->gpio_echo=new GPIO($this->pin_echo);
+		$this->gpio_echo->setdir('in');
+		
+
+	}
+	public function getone(){
+		$this->gpio_trig->set($this->pin_trig,1);
+		usleep(11);
+		$this->gpio_trig->set($this->pin_trig,0);
+		$r=$this->gpio_echo->waitHIGH($this->timeout);
+		if(!$r) return 0;
+		$starttime=explode(' ',microtime());
+		$r=$this->gpio_echo->waitLOW($this->timeout);
+		if(!$r) return 0;
+		$endtime=explode(' ',microtime());
+		return floor(($endtime[0]-$starttime[0]+$endtime[1]-$starttime[1])*1000000);
+	}
+	public function getns(){
+		$sum=0;
+		for ($i=1;$i<=3;$i++){
+			$s=$this->getone();
+			if ($s>0) $sum=($sum+$s)/2;
+			usleep($this->pausetime);
+		}
+		
+		return floor($sum);
+	}
+	public function getmm(){
+		return floor(0.17*$this->getns());
+	}
+	
+
+
+
+}
+?>

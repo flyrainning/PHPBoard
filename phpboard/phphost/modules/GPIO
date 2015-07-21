@@ -1,0 +1,112 @@
+<?php
+class GPIO{
+
+	public $id,$direction,$portid,$port,$default_value,$dev_self,$dev_dir,$dev_value,$fp,$isready;
+
+	function __construct($id,$reset=false) {
+
+		foreach($GLOBALS['GPIO']['pins'] as $v){
+			if ($id==$v['id']){
+				$dd=$GLOBALS['GPIO']['driver_base'].'gpio'.$v['portid'].'_'.$v['port'].'/';
+			
+				$this->id=$v['id'];
+				$this->direction=$v['direction'];
+				$this->portid=$v['portid'];
+				$this->port=$v['port'];
+				$this->default_value=$v['default_value'];
+				$this->dev_self=$dd;
+				$this->dev_dir=$dd.'direction';
+				$this->dev_value=$dd.'value';
+				$this->fp='';
+				$this->isready=true;
+				unset($dd);
+				break;
+			}
+		}
+		
+		($this->isready) or error(__CLASS__.' init error (no conf found):'.$id);
+		
+		if (file_exists($this->dev_value)){
+			$isnew=false;
+		}else{
+			$isnew=true;
+			self::dev_w($GLOBALS['GPIO']['driver_base'].'export',$this->portid);
+			file_put_contents($this->dev_dir,$this->direction);
+		}
+		
+		$this->fp=fopen($this->dev_value, 'r+');
+				
+		($this->fp) or error(__CLASS__.' init error (open pin port error): pin'.$this->id);
+				
+		if (($reset)&&($this->direction=='out')){
+			fwrite($this->fp,$this->default_value) or error('pin '.$id.' set Default Error');
+		}
+
+	}
+	function __destruct() {
+		//$this->destroy();
+	}
+
+	public function destroy(){
+		self::dev_w($GLOBALS['GPIO']['driver_base'].'unexport',$this->portid);
+		fclose($this->fp);
+	}
+	
+	public function waitHIGH($mx=-1){
+		$res=true;
+		while($this->get()<>'1'){
+			usleep(1);
+			$mx--;
+			if ($mx==0){
+				$res=false;
+				break;
+			}
+		}
+		return $res;
+	}
+	public function waitLOW($mx=-1){
+		$res=true;
+		while($this->get()<>'0'){
+			usleep(1);
+			$mx--;
+			if ($mx==0){
+				$res=false;
+				break;
+			}
+		}
+		return $res;
+	}
+	public function get(){
+		fseek($this->fp,0);
+		return fread($this->fp,1);
+	}
+	public function set($value){
+		return fwrite($this->fp,$value);
+	}
+	public function getdir(){
+		return file_get_contents($this->dev_dir);
+	}
+	public function setdir($value){
+		return file_put_contents($this->dev_dir,$value);
+	}
+	public static function dev_w($dev,$value){
+		$fp=fopen($dev, 'w');
+		if (fwrite($fp,$value)){
+			fclose($fp);
+		}else{
+			return false;
+		}
+		return true;
+	}
+	public static function dev_r($dev,$count=100){
+		$fp=fopen($dev, 'r');
+		$res=fread($fp,$count);
+		fclose($fp);
+		return $res;
+	}
+	public function isready($pin){
+		$this->isready=file_exists($this->dev_value);
+		return $this->isready;
+	}
+}
+?>

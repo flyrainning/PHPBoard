@@ -1,0 +1,71 @@
+<?php
+
+class job extends SQLite3{
+	public $dbfile;
+	function __construct($index='0'){
+		$this->dbfile=JOB_DB.$index.'.job';
+		if (file_exists($this->dbfile)){
+			$this->open($this->dbfile);
+		}else{
+			$this->open($this->dbfile);
+			$makesql=<<<CODE
+CREATE TABLE `ctrl` (
+	`cmd`	TEXT
+	
+);
+CREATE TABLE `step` (
+	`cmd`	TEXT
+	
+);
+CODE;
+			$this->exec($makesql);
+		}
+	}
+	
+	public function getone(){
+		$r=$this->get(1);
+		return (empty($r))?'':$r[0];
+	}
+
+
+	public function get($count=1){
+		$r=array();
+		$res = $this->query('SELECT cmd FROM ctrl limit '.$count);
+	
+		while($row = $res->fetchArray(SQLITE3_ASSOC) ){
+			$r[]=$row['cmd'];
+		}
+		if (!empty($r)){
+			$this->exec('DELETE from ctrl limit '.$count);
+		}else{
+			$res = $this->query('SELECT cmd FROM step limit '.$count);
+			while($row = $res->fetchArray(SQLITE3_ASSOC) ){
+				$r[]=$row['cmd'];
+			}
+			$this->exec('DELETE from step limit '.$count);
+		
+		}
+
+		return $r;
+	}
+	public function set($cmd,$ctrl=false){
+		$cmd=is_array($cmd)?$cmd:array($cmd);
+		$val='';
+		foreach($cmd as $c) $val.='("'.$this->escapeString($c).'"),';
+		$val=rtrim($val,',');
+		$tab=($ctrl)?'ctrl':'step';
+		$this->exec("INSERT INTO $tab (cmd) VALUES $val;");
+	
+	}
+	public function count(){
+		return $this->Querysingle('SELECT count(*) FROM step;');
+	
+	}
+	public function clean(){
+		$this->exec("DELETE from step;");
+	
+	}
+	
+}
+
+?>

@@ -1,0 +1,83 @@
+#!/usr/bin/php -q
+<?php
+
+require '/phpboard/phpboard';
+define('HOST_ROOT',dirname(__FILE__).'/');
+define('CONFIG',HOST_ROOT.'config/');
+define('SCRIPTS',HOST_ROOT.'scripts/');
+define('MODULES',HOST_ROOT.'modules/');
+
+($argc>=2) or error("No Command Found");
+
+//取得配置
+conf_to_global(CONFIG);
+
+//初始化
+$GLOBALS['debug']=array();
+$GLOBALS['loaded_modules']=array();
+
+//时区
+//date_default_timezone_set("PRC");
+
+if ($GLOBALS['config']['debug']){
+
+	error_reporting(E_ALL);
+	$GLOBALS['debug']['time_main']=microtime();
+}else{
+	error_reporting(0);
+}
+
+set_time_limit($GLOBALS['config']['time_limit']);
+
+//加载模块
+foreach($GLOBALS['config']['base_modules'] as $mod){
+	$GLOBALS['loaded_modules'][]=MODULES.$mod;
+	require MODULES.$mod;
+}
+
+
+//加载脚本
+$_fpapi_page_hash=SCRIPTS.strtr($argv[1],array('.' => '/'));
+if (file_exists($_fpapi_page_hash)) {
+	require $_fpapi_page_hash;
+}else{
+	error('Wrong Call');
+}
+
+
+debug::out();
+
+
+
+//base function
+
+function error($msg=''){
+	class_exists('debug') and debug::out();
+	die($msg."\n");
+}
+
+function modules($name){
+	(isset($GLOBALS['config']['modules'][$name])) or error('can NOT load module:'.$name);
+	if (!in_array(MODULES.$GLOBALS['config']['modules'][$name],$GLOBALS['loaded_modules'])){
+		$GLOBALS['loaded_modules'][]=MODULES.$GLOBALS['config']['modules'][$name];
+		include MODULES.$GLOBALS['config']['modules'][$name];
+	}
+}
+function conf_to_global($dir){
+	$handler = opendir($dir);
+	while (($filename = readdir($handler)) !== false) if (($filename != ".") &&( $filename != "..")) $GLOBALS[rtrim($filename,'.conf')]=get_json_conf(CONFIG.$filename);
+	closedir($handler);
+}
+function get_json_conf($filename,$value=''){
+
+	//$v=file_exists($filename)?file_get_contents($filename):$value;
+	$v=file_get_contents($filename);
+	$json=json_decode($v,true);
+	(empty($json)) and error('CONFIG Error : '.$filename);
+	return $json;
+}
+
+
+
+
+?>

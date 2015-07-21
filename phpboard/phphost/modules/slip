@@ -1,0 +1,163 @@
+<?php
+modules('switchs');
+class slip{
+
+
+	public $isready;
+
+	public $id;
+	public $pin_switch_enable;
+	public $pin_step;
+	public $pin_dir;
+	public $pin_switch_start;
+	public $pin_switch_end;
+	public $dirforward;
+	public $dirback;
+	
+	public $gpio_enable;
+	public $gpio_sw1;
+	public $gpio_sw2;
+	public $gpio_step;
+	public $gpio_dir;
+	
+	public $at;
+	public $mstep;
+	public $max_step;
+	public $now_dir;
+	public $speed;
+	public $check;
+	
+	function __construct($id) {
+
+		foreach($GLOBALS['device'][__CLASS__] as $v){
+			if ($id==$v['id']){
+				$this->id=$v['id'];
+				$this->type=$v['type'];
+				$this->pin_switch_enable=$v['switch_enable'];
+				$this->pin_step=$v['pin_step'];
+				$this->pin_dir=$v['pin_dir'];
+				$this->pin_switch_start=$v['switch_start'];
+				$this->pin_switch_end=$v['switch_end'];
+				$this->dirforward=$v['dirforward'];//
+				$this->dirback=($v['dirforward']=='1')?'0':'1';
+				$this->speed=$v['speed'];
+				$this->mstep=$v['mstep'];
+				$this->max_step=$v['max_step'];
+				
+				$this->isready=true;
+				break;
+			
+			
+			}
+		}
+		$this->at=1;
+		($this->isready) or error(__CLASS__.' init error (no slip conf found):'.$id);
+		$this->gpio_step=new GPIO($this->pin_step);
+		$this->gpio_dir=new GPIO($this->pin_dir);
+		
+		$this->gpio_step->setdir('out');
+		$this->gpio_step->set('0');
+		$this->gpio_dir->setdir('out');
+		$this->now_dir=$this->dirforward;
+		$this->gpio_dir->set($this->now_dir);
+	
+
+		if (empty($this->pin_switch_start)){
+			$this->gpio_sw1=false;
+		}else{
+			$this->gpio_sw1=new switchs($this->pin_switch_start);
+		}
+		if (empty($this->pin_switch_end)){
+			$this->gpio_sw2=false;
+		}else{
+			$this->gpio_sw2=new switchs($this->pin_switch_end);
+		}
+		if (empty($this->pin_switch_enable)){
+			$this->gpio_enable=false;
+		}else{
+			$this->gpio_enable=new switchs($this->pin_switch_enable);
+		}
+		
+	
+		$this->check=true;
+		//$this->gozero();
+
+	}
+	private function setdir($dir=1){//
+		if ($dir==1){
+			if ($this->now_dir<>$this->dirforward) {
+				$this->now_dir=$this->dirforward;
+				$this->gpio_dir->set($this->now_dir);
+			}
+		}else{
+			if ($this->now_dir<>$this->dirback) {
+				$this->now_dir=$this->dirback;
+				$this->gpio_dir->set($this->now_dir);
+			}
+			$dir=-1;
+		}
+		return $dir;
+
+	}
+	private function chkrange(){
+		if (!$this->check) return true;
+		return ((1<=$this->at)&&($this->at<=$this->max_step))?true:false;
+		//return ((1<=$this->at)&&($this->at<=$this->max_step))?(($this->gpio_sw2->isOFF())?true:false):false;   //if has sw2,use this one
+	}
+	private function onestep($dir,$speed){
+		$this->at=$this->at+$this->setdir($dir);
+		if ($this->chkrange()){
+			for($i=1;$i<=$this->mstep;$i++){
+				$this->gpio_step->set(1);
+				$this->gpio_step->set(0);
+				usleep($speed);
+			}
+		}else{
+			$this->at=$this->at-$this->setdir($dir);
+		}
+	}
+	public function enable(){
+		if ($this->gpio_enable) $this->gpio_enable->ON();
+	}
+	public function disable(){
+		if ($this->gpio_enable) $this->gpio_enable->OFF();
+	}
+	public function gozero(){
+	
+		while($this->gpio_sw1->isOFF()){
+			$this->go(-1);
+		}
+		while($this->gpio_sw1->isON()){
+			$this->go(1);
+		}
+		
+	
+		$this->at=1;
+	
+	}
+	public function go($step,$speed=''){//移动多少步
+		$speed=(empty($speed))?$this->speed:$speed;
+		
+		if ($step>0){
+			$dir=1;
+			$st=$step;
+		}else if ($step<0){
+			$dir=-1;
+			$st=-$step;
+		}else{
+			return;
+		}
+	
+		while($st>0){
+			$this->onestep($dir,$speed);
+			$st--;
+		}
+	
+	}
+	public function mto($c,$speed=''){//移动到某个坐标
+		$this->go($c-$this->at,$speed);
+	}
+	
+
+}
+?>

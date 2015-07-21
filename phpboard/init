@@ -1,0 +1,18 @@
+#!/usr/bin/php -q
+<?php
+
+require '/phpboard/phpboard';
+
+//cache
+
+is_dir(TMPDIR) or mkdir(TMPDIR,0777);
+is_dir(DIR_DATA) or mkdir(DIR_DATA,0777);
+
+exec('mount -t tmpfs phpboard.cache '.TMPDIR,$str_res,$str_r);
+
+if($str_r<>0) die('Error');
+
+if (isset($GLOBALS['config']['phphost']['run'])) foreach($GLOBALS['config']['phphost']['run'] as $v) exec('nohup '.phphost.' '.$v);
+
+
+?>
