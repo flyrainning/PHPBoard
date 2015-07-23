@@ -37,9 +37,9 @@ foreach($GLOBALS['config']['base_modules'] as $mod){
 
 
 //加载脚本
-$_fpapi_page_hash=SCRIPTS.strtr($argv[1],array('.' => '/'));
-if (file_exists($_fpapi_page_hash)) {
-	require $_fpapi_page_hash;
+$_phphost_page_hash=SCRIPTS.strtr($argv[1],array('.' => '/'));
+if (file_exists($_phphost_page_hash)) {
+	require $_phphost_page_hash;
 }else{
 	error('Wrong Call');
 }
