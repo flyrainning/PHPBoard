@@ -5,7 +5,8 @@ ARM 开发板基础框架，支持采用php控制硬件设备，如GPIO，可通
 
 ## 安装
 
-1. 根据开发板类型，自行在开发板上配置php+web运行环境，推荐使用nginx+php组合。php需要cli支持。
+####安装环境
+根据开发板类型，自行在开发板上配置php+web运行环境，推荐使用nginx+php组合。php需要cli支持。
 以Cubieboard 2，Debian系统为例。
 
 ```bash
@@ -24,13 +25,11 @@ apt-get install php5-sqlite php5-mysql  php5-gd
 
 ```
 
-2. 下载phpboard
+#### 下载安装phpboard
 
 config_sample文件夹存放系统配置文件示例，可供配置环境时参考。
 
 phpboard文件夹为框架主文件，将整个文件夹复制到系统根目录` / `下。
-
-3. 安装phpboard
 
 配置您的web服务根目录指向/phpboard/wwwroot/，如果使用nginx，可直接使用config_sample中的站点配置文件。
 
@@ -47,7 +46,7 @@ ln /phpboard/phphost/phphost /bin
 ```
 >**注意** 请检查/phpboard/init 和/phpboard/phphost/phphost的权限是否为`可执行`，若不是请使用chmod设置为可执行。
 
-4. 配置phpboard
+#### 配置phpboard
 
 phpboard的配置采用标准json格式。
 
@@ -55,7 +54,8 @@ phpboard的配置采用标准json格式。
 
 在/phpboard/phphost/config文件夹中配置设备和模块，如GPIO。根据需要用到的模块分别配置。
 
-5. 编写业务逻辑
+#### 编写业务逻辑
+
 操作界面部分可按照普通网站进行开发，放入`/phpboard/wwwroot`中
 
 硬件控制部分编写控制脚本，放入`/phpboard/phphost/script`目录中，通过phphost调用。
